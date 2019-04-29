@@ -5,10 +5,15 @@
 //! can be created which offers thread-safe (`Send + Sync`) access to the same
 //! data. If there's never an `Arc`, the `Rc` never pays the price for atomics.
 
+use std::borrow::Borrow;
 use std::cell::{Cell, UnsafeCell};
+use std::cmp;
+use std::fmt;
+use std::hash;
 use std::isize;
 use std::marker::PhantomData;
 use std::ops::Deref;
+use std::panic;
 use std::process::abort;
 use std::ptr::NonNull;
 use std::sync::atomic::{self, AtomicUsize, Ordering};
@@ -163,11 +168,95 @@ impl<T: ?Sized> Deref for Rc<T> {
     }
 }
 
+impl<T: ?Sized> AsRef<T> for Rc<T> {
+    fn as_ref(&self) -> &T {
+        &**self
+    }
+}
+
+impl<T: ?Sized> Borrow<T> for Rc<T> {
+    fn borrow(&self) -> &T {
+        &**self
+    }
+}
+
 impl<T> From<T> for Rc<T> {
     fn from(data: T) -> Self {
         Rc::new(data)
     }
 }
+
+impl<T: Default> Default for Rc<T> {
+    fn default() -> Self {
+        Rc::new(T::default())
+    }
+}
+
+impl<T: ?Sized + fmt::Display> fmt::Display for Rc<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&**self, f)
+    }
+}
+
+impl<T: ?Sized + fmt::Debug> fmt::Debug for Rc<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
+impl<T: ?Sized> fmt::Pointer for Rc<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Pointer::fmt(&(&**self as *const T), f)
+    }
+}
+
+impl<T: ?Sized + hash::Hash> hash::Hash for Rc<T> {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        (**self).hash(state)
+    }
+}
+
+impl<T: ?Sized + PartialEq> PartialEq for Rc<T> {
+    fn eq(&self, other: &Self) -> bool {
+        **self == **other
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        **self != **other
+    }
+}
+
+impl<T: ?Sized + Eq> Eq for Rc<T> {}
+
+impl<T: ?Sized + PartialOrd> PartialOrd for Rc<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        T::partial_cmp(&**self, &**other)
+    }
+
+    fn lt(&self, other: &Self) -> bool {
+        **self < **other
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        **self <= **other
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        **self > **other
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        **self >= **other
+    }
+}
+
+impl<T: ?Sized + Ord> Ord for Rc<T> {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        T::cmp(&**self, &**other)
+    }
+}
+
+impl<T: panic::RefUnwindSafe + ?Sized> panic::UnwindSafe for Rc<T> {}
 
 /// A thread-safe reference-counting pointer. 'Arc' stands for 'Atomically Reference Counted'.
 #[derive(Clone)]
@@ -201,8 +290,92 @@ impl<T: ?Sized> Deref for Arc<T> {
     }
 }
 
+impl<T: ?Sized> AsRef<T> for Arc<T> {
+    fn as_ref(&self) -> &T {
+        &**self
+    }
+}
+
+impl<T: ?Sized> Borrow<T> for Arc<T> {
+    fn borrow(&self) -> &T {
+        &**self
+    }
+}
+
 impl<T> From<T> for Arc<T> {
     fn from(data: T) -> Self {
         Arc::new(data)
     }
 }
+
+impl<T: Default> Default for Arc<T> {
+    fn default() -> Self {
+        Arc::new(T::default())
+    }
+}
+
+impl<T: ?Sized + fmt::Display> fmt::Display for Arc<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&**self, f)
+    }
+}
+
+impl<T: ?Sized + fmt::Debug> fmt::Debug for Arc<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
+}
+
+impl<T: ?Sized> fmt::Pointer for Arc<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Pointer::fmt(&(&**self as *const T), f)
+    }
+}
+
+impl<T: ?Sized + hash::Hash> hash::Hash for Arc<T> {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        (**self).hash(state)
+    }
+}
+
+impl<T: ?Sized + PartialEq> PartialEq for Arc<T> {
+    fn eq(&self, other: &Self) -> bool {
+        **self == **other
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        **self != **other
+    }
+}
+
+impl<T: ?Sized + Eq> Eq for Arc<T> {}
+
+impl<T: ?Sized + PartialOrd> PartialOrd for Arc<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        T::partial_cmp(&**self, &**other)
+    }
+
+    fn lt(&self, other: &Self) -> bool {
+        **self < **other
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        **self <= **other
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        **self > **other
+    }
+
+    fn ge(&self, other: &Self) -> bool {
+        **self >= **other
+    }
+}
+
+impl<T: ?Sized + Ord> Ord for Arc<T> {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        T::cmp(&**self, &**other)
+    }
+}
+
+impl<T: panic::RefUnwindSafe + ?Sized> panic::UnwindSafe for Arc<T> {}
