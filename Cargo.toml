@@ -1,0 +1,13 @@
+[package]
+name = "darc"
+version = "0.0.1"
+description = "Dynamically-atomic reference-counting pointers (proof of concept)"
+authors = ["Josh Stone <cuviper@gmail.com>"]
+edition = "2018"
+
+[dev-dependencies]
+criterion = "0.2"
+
+[[bench]]
+name = "clone"
+harness = false
