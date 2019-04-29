@@ -1,4 +1,9 @@
 //! Dynamically-atomic reference-counting pointers.
+//!
+//! This is a proof of concept of a Rust `Rc<T>` type that can *dynamically* choose
+//! whether to use atomic access to update its reference count. A related `Arc<T>`
+//! can be created which offers thread-safe (`Send + Sync`) access to the same
+//! data. If there's never an `Arc`, the `Rc` never pays the price for atomics.
 
 use std::cell::{Cell, UnsafeCell};
 use std::isize;
