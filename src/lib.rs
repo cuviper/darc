@@ -110,7 +110,7 @@ impl<T: ?Sized> Inner<T> {
 /// converted to an `Arc`.
 pub struct Rc<T: ?Sized> {
     inner: NonNull<Inner<T>>,
-    phantom: PhantomData<T>,
+    phantom: PhantomData<Inner<T>>,
 }
 
 impl<T: ?Sized> Rc<T> {
