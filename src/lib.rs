@@ -259,7 +259,6 @@ impl<T: ?Sized + Ord> Ord for Rc<T> {
 impl<T: panic::RefUnwindSafe + ?Sized> panic::UnwindSafe for Rc<T> {}
 
 /// A thread-safe reference-counting pointer. 'Arc' stands for 'Atomically Reference Counted'.
-#[derive(Clone)]
 pub struct Arc<T: ?Sized> {
     inner: Rc<T>,
 }
@@ -279,6 +278,14 @@ impl<T> Arc<T> {
     pub fn from_rc(rc: Rc<T>) -> Self {
         unsafe { rc.inner().make_multi_threaded() };
         Self { inner: rc }
+    }
+}
+
+impl<T: ?Sized> Clone for Arc<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Rc::clone(&self.inner),
+        }
     }
 }
 
