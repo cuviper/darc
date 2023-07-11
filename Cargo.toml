@@ -1,6 +1,6 @@
 [package]
 name = "darc"
-version = "0.0.1"
+version = "0.0.2"
 description = "Dynamically-atomic reference-counting pointers (proof of concept)"
 repository = "https://github.com/cuviper/darc"
 license = "Apache-2.0/MIT"
